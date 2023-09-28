@@ -1,0 +1,853 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model agencies {
+  id            Int           @id @default(autoincrement())
+  name          String        @unique(map: "name_UNIQUE") @db.VarChar(128)
+  website       String?       @unique(map: "website_UNIQUE") @db.VarChar(128)
+  slug          String        @unique(map: "slug_UNIQUE") @db.VarChar(128)
+  created_at    Int
+  updated_at    Int
+  total_players Int           @default(0)
+  total_agents  Int           @default(0)
+  agency_data   agency_data[]
+  agents        agents[]
+}
+
+model agency_data {
+  id        Int      @id @default(autoincrement())
+  agency_id Int
+  data      String   @unique(map: "data_UNIQUE") @db.VarChar(198)
+  agencies  agencies @relation(fields: [agency_id], references: [id], onDelete: Cascade, map: "fk_agency_data_agencies1")
+
+  @@index([agency_id], map: "fk_agency_data_agencies1_idx")
+}
+
+model agents {
+  id              Int               @id @default(autoincrement())
+  name            String            @unique(map: "agent_name_UNIQUE") @db.VarChar(64)
+  address         String?           @db.VarChar(198)
+  phone           String?           @db.VarChar(64)
+  mobile          String?           @unique(map: "mobile_UNIQUE") @db.VarChar(64)
+  email           String?           @db.VarChar(64)
+  country_id      Int?
+  fiba_licence    Int?              @unique(map: "agent_fiba_licence_UNIQUE")
+  created_at      Int
+  updated_at      Int
+  slug            String            @unique(map: "agent_slug_UNIQUE") @db.VarChar(64)
+  skype           String?           @unique(map: "skype_UNIQUE") @db.VarChar(64)
+  fiba_url        String?           @unique(map: "crawler_url_UNIQUE") @db.VarChar(198)
+  agency_id       Int?
+  realgm_url      String?           @unique(map: "realgm_url_UNIQUE") @db.VarChar(198)
+  total_players   Int               @default(0)
+  agencies        agencies?         @relation(fields: [agency_id], references: [id], map: "fk_agents_agencies1")
+  countries       countries?        @relation(fields: [country_id], references: [id], map: "fk_agents_countries1")
+  player_vs_agent player_vs_agent[]
+
+  @@index([agency_id], map: "fk_agents_agencies1_idx")
+  @@index([country_id], map: "fk_agents_countries1_idx")
+}
+
+model alerts {
+  id             Int           @id @default(autoincrement())
+  player_id      Int?
+  description    String        @db.VarChar(512)
+  created_at     Int
+  updated_at     Int
+  competition_id Int?
+  team_id        Int?
+  season_id      Int?
+  players        players?      @relation(fields: [player_id], references: [id], map: "fk_alert_players10")
+  competitions   competitions? @relation(fields: [competition_id], references: [id], map: "fk_alerts_competitions1")
+  seasons        seasons?      @relation(fields: [season_id], references: [id], map: "fk_alerts_seasons1")
+  teams          teams?        @relation(fields: [team_id], references: [id], map: "fk_alerts_teams1")
+
+  @@index([competition_id], map: "fk_alerts_competitions1_idx")
+  @@index([player_id], map: "fk_alerts_players1_idx")
+  @@index([season_id], map: "fk_alerts_seasons1_idx")
+  @@index([team_id], map: "fk_alerts_teams1_idx")
+}
+
+model auth_assignment {
+  item_name  String    @db.VarChar(64)
+  user_id    String    @db.VarChar(64)
+  created_at Int?
+  auth_item  auth_item @relation(fields: [item_name], references: [name], onDelete: Cascade, map: "auth_assignment_ibfk_1")
+
+  @@id([item_name, user_id])
+}
+
+model auth_item {
+  name                                              String            @id @db.VarChar(64)
+  type                                              Int               @db.SmallInt
+  description                                       String?           @db.Text
+  rule_name                                         String?           @db.VarChar(64)
+  data                                              Bytes?            @db.Blob
+  created_at                                        Int?
+  updated_at                                        Int?
+  auth_assignment                                   auth_assignment[]
+  auth_rule                                         auth_rule?        @relation(fields: [rule_name], references: [name], map: "auth_item_ibfk_1")
+  auth_item_child_auth_item_child_parentToauth_item auth_item_child[] @relation("auth_item_child_parentToauth_item")
+  auth_item_child_auth_item_child_childToauth_item  auth_item_child[] @relation("auth_item_child_childToauth_item")
+
+  @@index([type], map: "idx-auth_item-type")
+  @@index([rule_name], map: "rule_name")
+}
+
+model auth_item_child {
+  parent                                      String    @db.VarChar(64)
+  child                                       String    @db.VarChar(64)
+  auth_item_auth_item_child_parentToauth_item auth_item @relation("auth_item_child_parentToauth_item", fields: [parent], references: [name], onDelete: Cascade, map: "auth_item_child_ibfk_1")
+  auth_item_auth_item_child_childToauth_item  auth_item @relation("auth_item_child_childToauth_item", fields: [child], references: [name], onDelete: Cascade, map: "auth_item_child_ibfk_2")
+
+  @@id([parent, child])
+  @@index([child], map: "child")
+}
+
+model auth_rule {
+  name       String      @id @db.VarChar(64)
+  data       Bytes?      @db.Blob
+  created_at Int?
+  updated_at Int?
+  auth_item  auth_item[]
+}
+
+model blog {
+  id                                              Int            @id @default(autoincrement())
+  title                                           String         @db.VarChar(255)
+  description                                     String?        @db.MediumText
+  date                                            Int
+  image                                           String?        @db.VarChar(255)
+  created_at                                      Int
+  updated_at                                      Int
+  slug                                            String         @unique(map: "blog_slug_UNIQUE") @db.VarChar(255)
+  position                                        Int?           @unique(map: "blog_position_UNIQUE")
+  blog_related_blog_related_blog_id_mainToblog    blog_related[] @relation("blog_related_blog_id_mainToblog")
+  blog_related_blog_related_blog_id_relatedToblog blog_related[] @relation("blog_related_blog_id_relatedToblog")
+}
+
+model blog_related {
+  blog_id_main                            Int
+  blog_id_related                         Int
+  blog_blog_related_blog_id_mainToblog    blog @relation("blog_related_blog_id_mainToblog", fields: [blog_id_main], references: [id], onDelete: Cascade, map: "fk_blog_has_blog_blog1")
+  blog_blog_related_blog_id_relatedToblog blog @relation("blog_related_blog_id_relatedToblog", fields: [blog_id_related], references: [id], onDelete: Cascade, map: "fk_blog_has_blog_blog2")
+
+  @@id([blog_id_main, blog_id_related])
+  @@index([blog_id_main], map: "fk_blog_has_blog_blog1_idx")
+  @@index([blog_id_related], map: "fk_blog_has_blog_blog2_idx")
+}
+
+model college_class {
+  id         Int          @id @default(autoincrement()) @db.TinyInt
+  name       String       @unique(map: "name_UNIQUE") @db.VarChar(16)
+  statistics statistics[]
+}
+
+model competition_name {
+  id             Int          @id @default(autoincrement())
+  competition_id Int
+  name           String       @unique(map: "name_UNIQUE") @db.VarChar(128)
+  competitions   competitions @relation(fields: [competition_id], references: [id], onDelete: Cascade, map: "fk_competition_name_competitions1")
+
+  @@index([competition_id], map: "fk_competition_name_competitions1_idx")
+}
+
+model competition_rankings {
+  id              Int          @id @default(autoincrement())
+  competitions_id Int
+  stat            String       @db.VarChar(45)
+  created_at      Int          @default(0)
+  updated_at      Int          @default(0)
+  competitions    competitions @relation(fields: [competitions_id], references: [id], onDelete: Cascade, map: "fk_competition_rankings_competitions1")
+
+  @@index([competitions_id], map: "fk_competition_rankings_competitions1_idx")
+}
+
+model competition_urls {
+  id                   Int          @id @default(autoincrement())
+  competition_id       Int
+  url                  String       @db.VarChar(255)
+  player_url           String?      @db.VarChar(255)
+  search_url           String?      @db.VarChar(255)
+  enabled              Boolean      @default(false)
+  created_at           Int          @default(0)
+  updated_at           Int          @default(0)
+  robot_create_players Boolean      @default(false)
+  robot_find_by_name   Boolean      @default(true)
+  robot_game_by_game   Boolean      @default(false)
+  crawler_strategy     String?      @db.VarChar(63)
+  competitions         competitions @relation(fields: [competition_id], references: [id], onDelete: Cascade, map: "fk_competiton_urls_competitions1")
+
+  @@index([competition_id], map: "fk_competiton_urls_competitions1_idx")
+}
+
+model competitions {
+  id                   Int                    @id @default(autoincrement())
+  country_id           Int?
+  name                 String                 @unique(map: "competition_name_unique") @db.VarChar(33)
+  twitter              String?                @db.VarChar(16)
+  created_at           Int
+  updated_at           Int
+  type                 String?                @db.VarChar(22)
+  position             Int?
+  slug                 String                 @unique(map: "slug_UNIQUE") @db.VarChar(62)
+  cloud_path           String?                @db.VarChar(120)
+  cloud_path_thumb     String?                @db.VarChar(120)
+  alerts               alerts[]
+  competition_name     competition_name[]
+  competition_rankings competition_rankings[]
+  competition_urls     competition_urls[]
+  countries            countries?             @relation(fields: [country_id], references: [id], map: "fk_competitions_countries")
+  seasons              seasons[]
+
+  @@index([country_id], map: "competitions_countries_idx")
+}
+
+model countries {
+  id            Int             @id @default(autoincrement())
+  iso2          String          @unique(map: "unique_iso2") @db.VarChar(2)
+  passport      String?         @db.VarChar(16)
+  created_at    Int             @default(0)
+  updated_at    Int             @default(0)
+  name          String          @unique(map: "name_UNIQUE") @db.VarChar(50)
+  agents        agents[]
+  competitions  competitions[]
+  country_names country_names[]
+  nationalities nationalities[]
+  teams         teams[]
+}
+
+model country_names {
+  id         Int       @id @default(autoincrement())
+  country_id Int
+  name       String    @unique(map: "unique_name") @db.VarChar(50)
+  default    Int       @default(0)
+  created_at Int
+  updated_at Int
+  countries  countries @relation(fields: [country_id], references: [id], onDelete: Cascade, map: "fk_country_names_countries1")
+
+  @@index([country_id], map: "fk_country_names_countries1_idx")
+}
+
+model coupon {
+  id         Int    @id @default(autoincrement())
+  code       String @unique(map: "couponcol_UNIQUE") @db.VarChar(255)
+  role       String @default(dbgenerated("(user)")) @db.VarChar(64)
+  days       Int    @default(14)
+  user_id    Int?
+  created_at Int
+  updated_at Int
+  used_at    Int?
+  user       user?  @relation(fields: [user_id], references: [id], map: "fk_coupon_user1")
+
+  @@index([user_id], map: "fk_coupon_user1_idx")
+}
+
+model distinct_players {
+  id                                           Int     @id @default(autoincrement())
+  player1_id                                   Int
+  player2_id                                   Int
+  players_distinct_players_player1_idToplayers players @relation("distinct_players_player1_idToplayers", fields: [player1_id], references: [id], onDelete: Cascade, map: "fk_distinct_players_players1")
+  players_distinct_players_player2_idToplayers players @relation("distinct_players_player2_idToplayers", fields: [player2_id], references: [id], onDelete: Cascade, map: "fk_distinct_players_players2")
+
+  @@unique([player1_id, player2_id], map: "index_unique_player_1_2")
+  @@index([player1_id], map: "fk_distinct_players_players1_idx")
+  @@index([player2_id], map: "fk_distinct_players_players2_idx")
+}
+
+model game_statistics {
+  id                        Int     @default(autoincrement()) @db.UnsignedInt
+  game_id                   Int
+  player_id                 Int
+  team_id                   Int
+  seconds                   Int     @default(0) @db.UnsignedSmallInt
+  points                    Int     @default(0) @db.UnsignedTinyInt
+  created_at                Int     @db.UnsignedInt
+  updated_at                Int     @db.UnsignedInt
+  is_starter                Int?    @db.UnsignedTinyInt
+  field_goals_1pt_made      Int?    @db.UnsignedTinyInt
+  field_goals_1pt_attempted Int?    @db.UnsignedTinyInt
+  field_goals_3pt_made      Int?    @db.UnsignedTinyInt
+  field_goals_3pt_attempted Int?    @db.UnsignedTinyInt
+  field_goals_2pt_made      Int?    @db.UnsignedTinyInt
+  field_goals_2pt_attempted Int?    @db.UnsignedTinyInt
+  rebounds_offense          Int?    @db.UnsignedTinyInt
+  rebounds_defense          Int?    @db.UnsignedTinyInt
+  assists                   Int?    @db.UnsignedTinyInt
+  fouls_made                Int?    @db.UnsignedTinyInt
+  steals                    Int?    @db.UnsignedTinyInt
+  blocks_made               Int?    @db.UnsignedTinyInt
+  turnovers                 Int?    @db.UnsignedTinyInt
+  games                     games   @relation(fields: [game_id], references: [id], onDelete: Cascade, map: "fk_game_statistics_games1")
+  players                   players @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_game_statistics_players1")
+  teams                     teams   @relation(fields: [team_id], references: [id], onDelete: Cascade, map: "fk_game_statistics_teams1")
+
+  @@id([id, game_id, player_id, team_id])
+  @@unique([player_id, game_id], map: "unique_game_player")
+  @@index([game_id], map: "fk_game_statistics_games1_idx")
+  @@index([player_id], map: "fk_game_statistics_players1_idx")
+  @@index([team_id], map: "fk_game_statistics_teams1_idx")
+}
+
+model game_urls {
+  id           Int    @default(autoincrement())
+  game_id      Int
+  url          String @unique(map: "url_UNIQUE") @db.VarChar(255)
+  created_at   Int
+  updated_at   Int
+  processed_at Int?
+  games        games  @relation(fields: [game_id], references: [id], onDelete: Cascade, map: "fk_game_urls_games1")
+
+  @@id([id, game_id])
+  @@index([game_id], map: "fk_game_urls_games1_idx")
+}
+
+model games {
+  id                              Int               @id @default(autoincrement())
+  season_id                       Int
+  date                            String            @db.VarChar(10)
+  home_team_id                    Int
+  away_team_id                    Int
+  created_at                      Int
+  updated_at                      Int
+  home_team_points                Int               @default(0) @db.UnsignedTinyInt
+  away_team_points                Int               @default(0) @db.UnsignedTinyInt
+  slug                            String            @unique(map: "unique_slug") @db.VarChar(142)
+  game_statistics                 game_statistics[]
+  game_urls                       game_urls[]
+  seasons                         seasons           @relation(fields: [season_id], references: [id], onDelete: Cascade, map: "fk_games_seasons1")
+  teams_games_home_team_idToteams teams             @relation("games_home_team_idToteams", fields: [home_team_id], references: [id], onDelete: Cascade, map: "fk_games_teams1")
+  teams_games_away_team_idToteams teams             @relation("games_away_team_idToteams", fields: [away_team_id], references: [id], onDelete: Cascade, map: "fk_games_teams2")
+
+  @@unique([season_id, home_team_id, away_team_id], map: "unique_season_team1_team2")
+  @@index([season_id], map: "fk_games_seasons1_idx")
+  @@index([home_team_id], map: "fk_games_teams1_idx")
+  @@index([away_team_id], map: "fk_games_teams2_idx")
+}
+
+model gm_vs_user {
+  general_manager_id                       Int
+  user_id                                  Int  @unique(map: "user_id_UNIQUE")
+  user_gm_vs_user_general_manager_idTouser user @relation("gm_vs_user_general_manager_idTouser", fields: [general_manager_id], references: [id], onDelete: Cascade, map: "fk_gm_vs_user_user1")
+  user_gm_vs_user_user_idTouser            user @relation("gm_vs_user_user_idTouser", fields: [user_id], references: [id], onDelete: Cascade, map: "fk_gm_vs_user_user2")
+
+  @@id([general_manager_id, user_id])
+  @@index([user_id], map: "fk_gm_vs_user_user2_idx")
+}
+
+model migration {
+  version    String @id @db.VarChar(180)
+  apply_time Int?
+}
+
+model nationalities {
+  player_id  Int
+  country_id Int
+  countries  countries @relation(fields: [country_id], references: [id], onDelete: Cascade, map: "fk_players_has_countries_country1")
+  players    players   @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_players_has_player")
+
+  @@id([player_id, country_id])
+  @@index([country_id], map: "fk_players_has_countries_country_idx")
+  @@index([player_id], map: "fk_players_has_player_idx")
+}
+
+model notes {
+  id                  Bytes                @id @unique(map: "id_UNIQUE") @db.Binary(16)
+  author              String               @db.VarChar(40)
+  description         String               @db.Text
+  created_at          Int
+  updated_at          Int
+  note_category_id    Int?
+  note_subcategory_id Int?
+  player_id           Int
+  user_id             Int
+  notes_categories    notes_categories?    @relation(fields: [note_category_id], references: [id], map: "fk_notes_notes_categories1")
+  notes_subcategories notes_subcategories? @relation(fields: [note_subcategory_id], references: [id], map: "fk_notes_notes_subcategories1")
+  players             players              @relation(fields: [player_id], references: [id], map: "fk_notes_players1")
+  user                user                 @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_notes_user1")
+
+  @@index([note_category_id], map: "fk_notes_notes_categories1_idx")
+  @@index([note_subcategory_id], map: "fk_notes_notes_subcategories1_idx")
+  @@index([player_id], map: "fk_notes_players1_idx")
+  @@index([user_id], map: "fk_notes_user1_idx")
+}
+
+model notes_categories {
+  id                  Int                   @id @default(autoincrement())
+  name                String                @unique(map: "name_UNIQUE") @db.VarChar(45)
+  created_at          Int
+  updated_at          Int
+  notes               notes[]
+  notes_subcategories notes_subcategories[]
+}
+
+model notes_subcategories {
+  id               Int              @id @default(autoincrement())
+  name             String           @unique(map: "name_UNIQUE") @db.VarChar(45)
+  created_at       Int
+  updated_at       Int
+  note_category_id Int
+  notes            notes[]
+  notes_categories notes_categories @relation(fields: [note_category_id], references: [id], onDelete: Cascade, map: "fk_notes_subcategories_notes_categories1")
+
+  @@index([note_category_id], map: "fk_notes_subcategories_notes_categories1_idx")
+}
+
+model photos {
+  id               Int     @id @default(autoincrement())
+  player_id        Int
+  source           String? @db.VarChar(32)
+  created_at       Int     @default(0)
+  updated_at       Int     @default(0)
+  md5              String  @unique(map: "md5_UNIQUE") @db.VarChar(32)
+  cloud_path       String? @unique(map: "cloud_path_UNIQUE") @db.VarChar(120)
+  cloud_path_thumb String? @unique(map: "cloud_path_resize_UNIQUE") @db.VarChar(120)
+  players          players @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_photo_fk")
+
+  @@index([player_id], map: "player_photo_idx")
+}
+
+model player_tag_assn {
+  player_tag_id Int
+  player_id     Int
+  player_ord    Decimal     @db.Decimal(8, 4)
+  created_at    Int?
+  updated_at    Int?
+  player_tags   player_tags @relation(fields: [player_tag_id], references: [id], onDelete: Cascade, map: "fk_player_tag_assn_player_tags1")
+  players       players     @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_tag_assn_players1")
+
+  @@id([player_tag_id, player_id])
+  @@index([player_id], map: "fk_player_tag_assn_players1_idx")
+}
+
+model player_tags {
+  id              Int               @id @default(autoincrement())
+  name            String            @db.VarChar(63)
+  user_id         Int
+  created_at      Int?
+  updated_at      Int?
+  position        Int?
+  player_tag_assn player_tag_assn[]
+  user            user              @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_player_tags_user1")
+
+  @@unique([name, user_id], map: "unique_name_user_id")
+  @@index([user_id], map: "fk_player_tags_user1_idx")
+}
+
+model player_url {
+  id         Int     @id @default(autoincrement())
+  player_id  Int
+  url        String  @unique(map: "url_UNIQUE") @db.VarChar(249)
+  created_at Int     @default(0)
+  updated_at Int     @default(0)
+  players    players @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_url_players1")
+
+  @@index([player_id], map: "fk_player_url_players1_idx")
+}
+
+model player_url_blacklist {
+  id          Int     @id @default(autoincrement())
+  url         String  @unique(map: "url_UNIQUE") @db.VarChar(255)
+  description String? @db.VarChar(64)
+  created_at  Int
+  updated_at  Int
+}
+
+model player_vs_agent {
+  player_id Int
+  agent_id  Int
+  agents    agents  @relation(fields: [agent_id], references: [id], onDelete: Cascade, map: "fk_players_has_agents_agents1")
+  players   players @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_players_has_agents_players1")
+
+  @@id([player_id, agent_id])
+  @@index([agent_id], map: "fk_players_has_agents_agents1_idx")
+  @@index([player_id], map: "fk_players_has_agents_players1_idx")
+}
+
+model player_vs_position {
+  player_id   Int
+  position_id Int
+  players     players   @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_vs_position_players1")
+  positions   positions @relation(fields: [position_id], references: [id], onDelete: Cascade, map: "fk_player_vs_position_positions1")
+
+  @@id([player_id, position_id])
+  @@index([player_id], map: "fk_player_vs_position_players1_idx")
+  @@index([position_id], map: "fk_player_vs_position_positions1_idx")
+}
+
+model players {
+  id                                                    Int                  @id @default(autoincrement())
+  name                                                  String               @db.VarChar(40)
+  surname                                               String?              @db.VarChar(40)
+  height                                                Decimal?             @db.Decimal(3, 2)
+  weight                                                Int?
+  birthday                                              Int?
+  birthmonth                                            Int?
+  birthyear                                             Int                  @default(0)
+  created_at                                            Int
+  updated_at                                            Int
+  slug                                                  String               @unique(map: "player_slug_UNIQUE") @db.VarChar(62)
+  hs_year                                               Int?
+  recruiter_id                                          Int?
+  facebook                                              String?              @unique(map: "facebook_UNIQUE") @db.VarChar(50)
+  instagram                                             String?              @unique(map: "player_instagram_UNIQUE") @db.VarChar(30)
+  twitter                                               String?              @unique(map: "player_twitter_UNIQUE") @db.VarChar(16)
+  hand                                                  Int?
+  positions_validated                                   Int                  @default(0)
+  alerts                                                alerts[]
+  distinct_players_distinct_players_player1_idToplayers distinct_players[]   @relation("distinct_players_player1_idToplayers")
+  distinct_players_distinct_players_player2_idToplayers distinct_players[]   @relation("distinct_players_player2_idToplayers")
+  game_statistics                                       game_statistics[]
+  nationalities                                         nationalities[]
+  notes                                                 notes[]
+  photos                                                photos[]
+  player_tag_assn                                       player_tag_assn[]
+  player_url                                            player_url[]
+  player_vs_agent                                       player_vs_agent[]
+  player_vs_position                                    player_vs_position[]
+  recruiters                                            recruiters?          @relation(fields: [recruiter_id], references: [id], map: "fk_players_recruiters1")
+  players_abilities                                     players_abilities[]
+  predicted_positions                                   predicted_positions?
+  statistics                                            statistics[]
+  videos                                                videos[]
+
+  @@index([recruiter_id], map: "fk_players_recruiters1_idx")
+}
+
+model players_abilities {
+  id          Int     @id @default(autoincrement())
+  player_id   Int
+  type        String  @db.VarChar(16)
+  pro_or_con  String  @db.VarChar(16)
+  description String  @db.VarChar(256)
+  players     players @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_players_abilities_players1")
+
+  @@index([player_id], map: "fk_players_abilities_players1_idx")
+}
+
+model position_name {
+  id          Int       @id @default(autoincrement())
+  position_id Int
+  name        String    @unique(map: "name_UNIQUE") @db.VarChar(18)
+  created_at  Int
+  updated_at  Int
+  positions   positions @relation(fields: [position_id], references: [id], onDelete: Cascade, map: "fk_position_name_positions1")
+
+  @@index([position_id], map: "fk_position_name_positions1_idx")
+}
+
+model positions {
+  id                                                                       Int                   @id @default(autoincrement())
+  abbr                                                                     String                @unique(map: "abbr_UNIQUE") @db.VarChar(2)
+  name                                                                     String                @unique(map: "name_UNIQUE") @db.VarChar(14)
+  created_at                                                               Int                   @default(0)
+  updated_at                                                               Int                   @default(0)
+  player_vs_position                                                       player_vs_position[]
+  position_name                                                            position_name[]
+  predicted_positions_predicted_positions_primary_position_idTopositions   predicted_positions[] @relation("predicted_positions_primary_position_idTopositions")
+  predicted_positions_predicted_positions_secondary_position_idTopositions predicted_positions[] @relation("predicted_positions_secondary_position_idTopositions")
+}
+
+model predicted_positions {
+  id                                                             Int       @id @unique(map: "id_UNIQUE") @default(autoincrement())
+  player_id                                                      Int       @unique(map: "player_id_UNIQUE")
+  primary_position_id                                            Int
+  secondary_position_id                                          Int
+  result                                                         String    @db.VarChar(128)
+  players                                                        players   @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_ml_positions_players1")
+  positions_predicted_positions_primary_position_idTopositions   positions @relation("predicted_positions_primary_position_idTopositions", fields: [primary_position_id], references: [id], onDelete: Cascade, map: "fk_ml_positions_positions1")
+  positions_predicted_positions_secondary_position_idTopositions positions @relation("predicted_positions_secondary_position_idTopositions", fields: [secondary_position_id], references: [id], onDelete: Cascade, map: "fk_ml_positions_positions2")
+
+  @@index([player_id], map: "fk_ml_positions_players1_idx")
+  @@index([primary_position_id], map: "fk_ml_positions_positions1_idx")
+  @@index([secondary_position_id], map: "fk_ml_positions_positions2_idx")
+}
+
+model profile {
+  user_id        Int     @id
+  name           String? @db.VarChar(255)
+  public_email   String? @db.VarChar(255)
+  gravatar_email String? @db.VarChar(255)
+  gravatar_id    String? @db.VarChar(32)
+  location       String? @db.VarChar(255)
+  website        String? @db.VarChar(255)
+  bio            String? @db.Text
+  timezone       String? @db.VarChar(40)
+  user           user    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_user_profile")
+}
+
+model rankings {
+  id          Int     @id @default(autoincrement())
+  stat        String  @db.VarChar(45)
+  name        String  @db.VarChar(64)
+  description String? @db.Text
+  season_id   Int
+  born_year   Int     @default(1900)
+  position    Int?    @default(0)
+  slug_db     String? @unique(map: "slug_db_UNIQUE") @db.VarChar(64)
+  seasons     seasons @relation(fields: [season_id], references: [id], onDelete: Cascade, map: "fk_rankings_seasons1")
+
+  @@index([season_id], map: "fk_rankings_seasons1_idx")
+}
+
+model recruiters {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique(map: "name_UNIQUE") @db.VarChar(128)
+  email      String    @unique(map: "email_UNIQUE") @db.VarChar(128)
+  phone      String    @unique(map: "phone_UNIQUE") @db.VarChar(128)
+  slug       String    @unique(map: "slug_UNIQUE") @db.VarChar(128)
+  created_at Int
+  updated_at Int
+  players    players[]
+}
+
+model seasons {
+  id                    Int                    @id @default(autoincrement())
+  competition_id        Int
+  start                 Int                    @db.SmallInt
+  end                   Int?                   @db.SmallInt
+  updated_at            Int
+  created_at            Int
+  enabled               Int                    @default(1) @db.TinyInt
+  alerts                alerts[]
+  games                 games[]
+  rankings              rankings[]
+  competitions          competitions           @relation(fields: [competition_id], references: [id], onDelete: Cascade, map: "fk_season_competition")
+  seasons_crawler_extra seasons_crawler_extra?
+  seasons_teams         seasons_teams[]
+  statistics            statistics[]
+
+  @@unique([competition_id, start], map: "unique_competition_start_end")
+  @@index([competition_id], map: "season_competition_idx")
+}
+
+model seasons_crawler_extra {
+  id               Int     @default(autoincrement())
+  season_id        Int     @unique(map: "seasons_id_UNIQUE")
+  crawler_strategy String  @db.VarChar(63)
+  url              String  @unique(map: "url_UNIQUE") @db.VarChar(255)
+  created_at       Int
+  updated_at       Int
+  seasons          seasons @relation(fields: [season_id], references: [id], onDelete: Cascade, map: "fk_seasons_crawler_extra_seasons1")
+
+  @@id([id, season_id])
+  @@index([season_id], map: "fk_seasons_crawler_extra_seasons1_idx")
+}
+
+model seasons_teams {
+  id         Int     @id @default(autoincrement())
+  season_id  Int
+  team_id    Int
+  created_at Int
+  updated_at Int
+  seasons    seasons @relation(fields: [season_id], references: [id], onDelete: Cascade, map: "fk_seasons_teams_seasons1")
+  teams      teams   @relation(fields: [team_id], references: [id], onDelete: Cascade, map: "fk_seasons_teams_teams1")
+
+  @@unique([season_id, team_id], map: "unique_season_id_team_id")
+  @@index([season_id], map: "fk_seasons_teams_seasons1_idx")
+  @@index([team_id], map: "fk_seasons_teams_teams1_idx")
+}
+
+model social_account {
+  id         Int     @id @default(autoincrement())
+  user_id    Int?
+  provider   String  @db.VarChar(255)
+  client_id  String  @db.VarChar(255)
+  data       String? @db.Text
+  code       String? @unique(map: "account_unique_code") @db.VarChar(32)
+  created_at Int?
+  email      String? @db.VarChar(255)
+  username   String? @db.VarChar(255)
+  user       user?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_user_account")
+
+  @@unique([provider, client_id], map: "account_unique")
+  @@index([user_id], map: "fk_user_account")
+}
+
+model statistic_saved_search {
+  id         Int     @id @default(autoincrement())
+  md5        String  @db.VarChar(32)
+  params     String? @db.Text
+  created_at Int
+  updated_at Int
+  user_id    Int
+  user       user    @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_statistic_saved_search_user1")
+
+  @@index([user_id], map: "fk_statistic_saved_search_user1_idx")
+}
+
+model statistics {
+  id                            Int            @id @default(autoincrement())
+  player_id                     Int
+  season_id                     Int
+  team_id                       Int
+  games                         Int?           @db.TinyInt
+  seconds                       Int?           @db.MediumInt
+  points                        Int?           @db.SmallInt
+  field_goals_1pt_attempted     Int?           @db.SmallInt
+  field_goals_1pt_made          Int?           @db.SmallInt
+  field_goals_2pt_attempted     Int?           @db.SmallInt
+  field_goals_2pt_made          Int?           @db.SmallInt
+  field_goals_3pt_attempted     Int?           @db.SmallInt
+  field_goals_3pt_made          Int?           @db.SmallInt
+  rebounds_defense              Int?           @db.SmallInt
+  rebounds_offense              Int?           @db.SmallInt
+  assists                       Int?           @db.SmallInt
+  steals                        Int?           @db.SmallInt
+  turnovers                     Int?           @db.SmallInt
+  blocks_received               Int?           @db.TinyInt
+  blocks_made                   Int?           @db.SmallInt
+  fouls_made                    Int?           @db.SmallInt
+  fouls_received                Int?           @db.SmallInt
+  efficiency                    Int?           @db.SmallInt
+  blocks                        Int?           @db.SmallInt
+  field_goals_attempted         Int?           @db.SmallInt
+  field_goals_made              Int?           @db.SmallInt
+  created_at                    Int            @default(0)
+  updated_at                    Int            @default(0)
+  avg_points                    Decimal?       @db.Decimal(3, 1)
+  avg_minutes                   Decimal?       @db.Decimal(3, 1)
+  avg_rebounds_defense          Decimal?       @db.Decimal(3, 1)
+  avg_rebounds_offense          Decimal?       @db.Decimal(3, 1)
+  avg_rebounds                  Decimal?       @db.Decimal(3, 1)
+  avg_assists                   Decimal?       @db.Decimal(3, 1)
+  avg_steals                    Decimal?       @db.Decimal(3, 1)
+  avg_turnovers                 Decimal?       @db.Decimal(3, 1)
+  avg_blocks_made               Decimal?       @db.Decimal(3, 1)
+  avg_blocks_received           Decimal?       @db.Decimal(3, 1)
+  avg_fouls_made                Decimal?       @db.Decimal(3, 1)
+  avg_fouls_received            Decimal?       @db.Decimal(3, 1)
+  avg_efficiency                Decimal?       @db.Decimal(3, 1)
+  avg_blocks                    Decimal?       @db.Decimal(4, 2)
+  avg_field_goals_made          Decimal?       @db.Decimal(3, 1)
+  avg_field_goals_attempted     Decimal?       @db.Decimal(3, 1)
+  minutes                       Int?           @db.SmallInt
+  rebounds                      Int?           @db.SmallInt
+  percentage_field_goals        Decimal?       @db.Decimal(4, 1)
+  percentage_field_goals_2pt    Decimal?       @db.Decimal(4, 1)
+  percentage_field_goals_3pt    Decimal?       @db.Decimal(4, 1)
+  percentage_field_goals_1pt    Decimal?       @db.Decimal(4, 1)
+  adv_fic                       Decimal?       @db.Decimal(4, 2)
+  adv_points_per_shoot          Decimal?       @db.Decimal(4, 2)
+  adv_true_shooting_percentage  Int?           @db.SmallInt
+  adv_total_shooting_percentage Int?           @db.SmallInt
+  adv_efg_percentage            Int?           @db.SmallInt
+  adv_fta_vs_fga                Decimal?       @db.Decimal(4, 3)
+  adv_ast_vs_to                 Decimal?       @db.Decimal(4, 2)
+  adv_stl_vs_to                 Decimal?       @db.Decimal(4, 2)
+  adv_tov_percentage            Int?           @db.TinyInt
+  adv_ast_stl_vs_to             Decimal?       @db.Decimal(5, 3)
+  adv_ro_vs_rd                  Decimal?       @db.Decimal(5, 3)
+  adv_blk_vs_rt                 Decimal?       @db.Decimal(5, 3)
+  adv_blk_rd_vs_pts             Decimal?       @db.Decimal(5, 3)
+  college_class_id              Int?           @db.TinyInt
+  avg_field_goals_1pt_made      Decimal?       @db.Decimal(3, 1)
+  avg_field_goals_1pt_attempted Decimal?       @db.Decimal(3, 1)
+  avg_field_goals_2pt_made      Decimal?       @db.Decimal(3, 1)
+  avg_field_goals_2pt_attempted Decimal?       @db.Decimal(3, 1)
+  avg_field_goals_3pt_made      Decimal?       @db.Decimal(3, 1)
+  avg_field_goals_3pt_attempted Decimal?       @db.Decimal(3, 1)
+  college_class                 college_class? @relation(fields: [college_class_id], references: [id], map: "fk_statistics_college_class1")
+  players                       players        @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_stats_avg_players10")
+  seasons                       seasons        @relation(fields: [season_id], references: [id], onDelete: Cascade, map: "fk_stats_avg_seasons10")
+  teams                         teams          @relation(fields: [team_id], references: [id], onDelete: Cascade, map: "fk_stats_avg_teams10")
+
+  @@unique([player_id, season_id, team_id], map: "unique_player_season")
+  @@index([id], map: "cod_stat")
+  @@index([college_class_id], map: "fk_statistics_college_class1_idx")
+  @@index([player_id], map: "fk_stats_avg_players1_idx")
+  @@index([season_id], map: "fk_stats_avg_seasons1_idx")
+  @@index([team_id], map: "fk_stats_avg_teams1_idx")
+  @@index([created_at], map: "index_statistics_created_at")
+}
+
+model team_name {
+  id         Int    @id @default(autoincrement())
+  team_id    Int
+  name       String @unique(map: "name_UNIQUE") @db.VarChar(70)
+  created_at Int    @default(0)
+  updated_at Int    @default(0)
+  teams      teams  @relation(fields: [team_id], references: [id], onDelete: Cascade, map: "fk_team_name_teams1")
+
+  @@index([team_id], map: "fk_team_name_teams1_idx")
+}
+
+model teams {
+  id                              Int               @id @default(autoincrement())
+  country_id                      Int?
+  twitter                         String?           @db.VarChar(16)
+  created_at                      Int
+  updated_at                      Int
+  image                           String?           @db.VarChar(255)
+  name                            String            @unique(map: "name_UNIQUE") @db.VarChar(38)
+  slug                            String            @unique(map: "slug_UNIQUE") @db.VarChar(62)
+  alerts                          alerts[]
+  game_statistics                 game_statistics[]
+  games_games_home_team_idToteams games[]           @relation("games_home_team_idToteams")
+  games_games_away_team_idToteams games[]           @relation("games_away_team_idToteams")
+  seasons_teams                   seasons_teams[]
+  statistics                      statistics[]
+  team_name                       team_name[]
+  countries                       countries?        @relation(fields: [country_id], references: [id], map: "fk_teams_countries1")
+
+  @@index([country_id], map: "fk_teams_countries1_idx")
+}
+
+model token {
+  user_id    Int
+  code       String @db.VarChar(32)
+  created_at Int
+  type       Int    @db.SmallInt
+  user       user   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_user_token")
+
+  @@unique([user_id, code, type], map: "token_unique")
+}
+
+model user {
+  id                                             Int                      @id @default(autoincrement())
+  username                                       String                   @unique(map: "user_unique_username") @db.VarChar(255)
+  email                                          String                   @unique(map: "user_unique_email") @db.VarChar(255)
+  password_hash                                  String                   @db.VarChar(60)
+  auth_key                                       String                   @db.VarChar(32)
+  confirmed_at                                   Int?
+  unconfirmed_email                              String?                  @db.VarChar(255)
+  blocked_at                                     Int?
+  registration_ip                                String?                  @db.VarChar(45)
+  created_at                                     Int
+  last_login_at                                  Int?
+  flags                                          Int                      @default(0)
+  updated_at                                     Int
+  coupon                                         coupon[]
+  gm_vs_user_gm_vs_user_general_manager_idTouser gm_vs_user[]             @relation("gm_vs_user_general_manager_idTouser")
+  gm_vs_user_gm_vs_user_user_idTouser            gm_vs_user?              @relation("gm_vs_user_user_idTouser")
+  notes                                          notes[]
+  player_tags                                    player_tags[]
+  profile                                        profile?
+  social_account                                 social_account[]
+  statistic_saved_search                         statistic_saved_search[]
+  token                                          token[]
+}
+
+model videos {
+  id           Int     @id @default(autoincrement())
+  player_id    Int
+  youtube      String? @db.VarChar(11)
+  color_hex    String? @db.VarChar(6)
+  number       Int?
+  description  String? @db.Text
+  created_at   Int     @default(0)
+  updated_at   Int     @default(0)
+  cloud_path   String? @db.VarChar(120)
+  cloud_thumb  String? @db.VarChar(120)
+  cloud_sprite String? @db.VarChar(120)
+  cloud_vtt    String? @db.VarChar(255)
+  players      players @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_video")
+
+  @@index([player_id], map: "player_video_idx")
+}
