@@ -1,7 +1,7 @@
 import {prisma} from "@/utils/db";
 import {notFound} from "next/navigation";
 
-const getPlayer = async (slug) => {
+const getPlayer = async (slug: string) => {
     const player = await prisma.players.findUnique({
         where: {
             slug
