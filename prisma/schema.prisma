@@ -63,7 +63,7 @@ model alerts {
   competition_id Int?
   team_id        Int?
   season_id      Int?
-  players        players?      @relation(fields: [player_id], references: [id], map: "fk_alert_players10")
+  players        Player?       @relation(fields: [player_id], references: [id], map: "fk_alert_players10")
   competitions   competitions? @relation(fields: [competition_id], references: [id], map: "fk_alerts_competitions1")
   seasons        seasons?      @relation(fields: [season_id], references: [id], map: "fk_alerts_seasons1")
   teams          teams?        @relation(fields: [team_id], references: [id], map: "fk_alerts_teams1")
@@ -250,11 +250,11 @@ model coupon {
 }
 
 model distinct_players {
-  id                                           Int     @id @default(autoincrement())
+  id                                           Int    @id @default(autoincrement())
   player1_id                                   Int
   player2_id                                   Int
-  players_distinct_players_player1_idToplayers players @relation("distinct_players_player1_idToplayers", fields: [player1_id], references: [id], onDelete: Cascade, map: "fk_distinct_players_players1")
-  players_distinct_players_player2_idToplayers players @relation("distinct_players_player2_idToplayers", fields: [player2_id], references: [id], onDelete: Cascade, map: "fk_distinct_players_players2")
+  players_distinct_players_player1_idToplayers Player @relation("distinct_players_player1_idToplayers", fields: [player1_id], references: [id], onDelete: Cascade, map: "fk_distinct_players_players1")
+  players_distinct_players_player2_idToplayers Player @relation("distinct_players_player2_idToplayers", fields: [player2_id], references: [id], onDelete: Cascade, map: "fk_distinct_players_players2")
 
   @@unique([player1_id, player2_id], map: "index_unique_player_1_2")
   @@index([player1_id], map: "fk_distinct_players_players1_idx")
@@ -262,31 +262,31 @@ model distinct_players {
 }
 
 model game_statistics {
-  id                        Int     @default(autoincrement()) @db.UnsignedInt
+  id                        Int    @default(autoincrement()) @db.UnsignedInt
   game_id                   Int
   player_id                 Int
   team_id                   Int
-  seconds                   Int     @default(0) @db.UnsignedSmallInt
-  points                    Int     @default(0) @db.UnsignedTinyInt
-  created_at                Int     @db.UnsignedInt
-  updated_at                Int     @db.UnsignedInt
-  is_starter                Int?    @db.UnsignedTinyInt
-  field_goals_1pt_made      Int?    @db.UnsignedTinyInt
-  field_goals_1pt_attempted Int?    @db.UnsignedTinyInt
-  field_goals_3pt_made      Int?    @db.UnsignedTinyInt
-  field_goals_3pt_attempted Int?    @db.UnsignedTinyInt
-  field_goals_2pt_made      Int?    @db.UnsignedTinyInt
-  field_goals_2pt_attempted Int?    @db.UnsignedTinyInt
-  rebounds_offense          Int?    @db.UnsignedTinyInt
-  rebounds_defense          Int?    @db.UnsignedTinyInt
-  assists                   Int?    @db.UnsignedTinyInt
-  fouls_made                Int?    @db.UnsignedTinyInt
-  steals                    Int?    @db.UnsignedTinyInt
-  blocks_made               Int?    @db.UnsignedTinyInt
-  turnovers                 Int?    @db.UnsignedTinyInt
-  games                     games   @relation(fields: [game_id], references: [id], onDelete: Cascade, map: "fk_game_statistics_games1")
-  players                   players @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_game_statistics_players1")
-  teams                     teams   @relation(fields: [team_id], references: [id], onDelete: Cascade, map: "fk_game_statistics_teams1")
+  seconds                   Int    @default(0) @db.UnsignedSmallInt
+  points                    Int    @default(0) @db.UnsignedTinyInt
+  created_at                Int    @db.UnsignedInt
+  updated_at                Int    @db.UnsignedInt
+  is_starter                Int?   @db.UnsignedTinyInt
+  field_goals_1pt_made      Int?   @db.UnsignedTinyInt
+  field_goals_1pt_attempted Int?   @db.UnsignedTinyInt
+  field_goals_3pt_made      Int?   @db.UnsignedTinyInt
+  field_goals_3pt_attempted Int?   @db.UnsignedTinyInt
+  field_goals_2pt_made      Int?   @db.UnsignedTinyInt
+  field_goals_2pt_attempted Int?   @db.UnsignedTinyInt
+  rebounds_offense          Int?   @db.UnsignedTinyInt
+  rebounds_defense          Int?   @db.UnsignedTinyInt
+  assists                   Int?   @db.UnsignedTinyInt
+  fouls_made                Int?   @db.UnsignedTinyInt
+  steals                    Int?   @db.UnsignedTinyInt
+  blocks_made               Int?   @db.UnsignedTinyInt
+  turnovers                 Int?   @db.UnsignedTinyInt
+  games                     games  @relation(fields: [game_id], references: [id], onDelete: Cascade, map: "fk_game_statistics_games1")
+  players                   Player @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_game_statistics_players1")
+  teams                     teams  @relation(fields: [team_id], references: [id], onDelete: Cascade, map: "fk_game_statistics_teams1")
 
   @@id([id, game_id, player_id, team_id])
   @@unique([player_id, game_id], map: "unique_game_player")
@@ -350,7 +350,7 @@ model nationalities {
   player_id  Int
   country_id Int
   countries  countries @relation(fields: [country_id], references: [id], onDelete: Cascade, map: "fk_players_has_countries_country1")
-  players    players   @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_players_has_player")
+  players    Player    @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_players_has_player")
 
   @@id([player_id, country_id])
   @@index([country_id], map: "fk_players_has_countries_country_idx")
@@ -369,7 +369,7 @@ model notes {
   user_id             Int
   notes_categories    notes_categories?    @relation(fields: [note_category_id], references: [id], map: "fk_notes_notes_categories1")
   notes_subcategories notes_subcategories? @relation(fields: [note_subcategory_id], references: [id], map: "fk_notes_notes_subcategories1")
-  players             players              @relation(fields: [player_id], references: [id], map: "fk_notes_players1")
+  players             Player               @relation(fields: [player_id], references: [id], map: "fk_notes_players1")
   user                user                 @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_notes_user1")
 
   @@index([note_category_id], map: "fk_notes_notes_categories1_idx")
@@ -408,7 +408,7 @@ model photos {
   md5              String  @unique(map: "md5_UNIQUE") @db.VarChar(32)
   cloud_path       String? @unique(map: "cloud_path_UNIQUE") @db.VarChar(120)
   cloud_path_thumb String? @unique(map: "cloud_path_resize_UNIQUE") @db.VarChar(120)
-  players          players @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_photo_fk")
+  players          Player  @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_photo_fk")
 
   @@index([player_id], map: "player_photo_idx")
 }
@@ -420,7 +420,7 @@ model player_tag_assn {
   created_at    Int?
   updated_at    Int?
   player_tags   player_tags @relation(fields: [player_tag_id], references: [id], onDelete: Cascade, map: "fk_player_tag_assn_player_tags1")
-  players       players     @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_tag_assn_players1")
+  players       Player      @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_tag_assn_players1")
 
   @@id([player_tag_id, player_id])
   @@index([player_id], map: "fk_player_tag_assn_players1_idx")
@@ -441,12 +441,12 @@ model player_tags {
 }
 
 model player_url {
-  id         Int     @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
   player_id  Int
-  url        String  @unique(map: "url_UNIQUE") @db.VarChar(249)
-  created_at Int     @default(0)
-  updated_at Int     @default(0)
-  players    players @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_url_players1")
+  url        String @unique(map: "url_UNIQUE") @db.VarChar(249)
+  created_at Int    @default(0)
+  updated_at Int    @default(0)
+  players    Player @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_url_players1")
 
   @@index([player_id], map: "fk_player_url_players1_idx")
 }
@@ -462,8 +462,8 @@ model player_url_blacklist {
 model player_vs_agent {
   player_id Int
   agent_id  Int
-  agents    agents  @relation(fields: [agent_id], references: [id], onDelete: Cascade, map: "fk_players_has_agents_agents1")
-  players   players @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_players_has_agents_players1")
+  agents    agents @relation(fields: [agent_id], references: [id], onDelete: Cascade, map: "fk_players_has_agents_agents1")
+  players   Player @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_players_has_agents_players1")
 
   @@id([player_id, agent_id])
   @@index([agent_id], map: "fk_players_has_agents_agents1_idx")
@@ -473,7 +473,7 @@ model player_vs_agent {
 model player_vs_position {
   player_id   Int
   position_id Int
-  players     players   @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_vs_position_players1")
+  players     Player    @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_vs_position_players1")
   positions   positions @relation(fields: [position_id], references: [id], onDelete: Cascade, map: "fk_player_vs_position_positions1")
 
   @@id([player_id, position_id])
@@ -481,7 +481,7 @@ model player_vs_position {
   @@index([position_id], map: "fk_player_vs_position_positions1_idx")
 }
 
-model players {
+model Player {
   id                                                    Int                  @id @default(autoincrement())
   name                                                  String               @db.VarChar(40)
   surname                                               String?              @db.VarChar(40)
@@ -518,15 +518,16 @@ model players {
   videos                                                videos[]
 
   @@index([recruiter_id], map: "fk_players_recruiters1_idx")
+  @@map("players")
 }
 
 model players_abilities {
-  id          Int     @id @default(autoincrement())
+  id          Int    @id @default(autoincrement())
   player_id   Int
-  type        String  @db.VarChar(16)
-  pro_or_con  String  @db.VarChar(16)
-  description String  @db.VarChar(256)
-  players     players @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_players_abilities_players1")
+  type        String @db.VarChar(16)
+  pro_or_con  String @db.VarChar(16)
+  description String @db.VarChar(256)
+  players     Player @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_players_abilities_players1")
 
   @@index([player_id], map: "fk_players_abilities_players1_idx")
 }
@@ -560,7 +561,7 @@ model predicted_positions {
   primary_position_id                                            Int
   secondary_position_id                                          Int
   result                                                         String    @db.VarChar(128)
-  players                                                        players   @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_ml_positions_players1")
+  players                                                        Player    @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_ml_positions_players1")
   positions_predicted_positions_primary_position_idTopositions   positions @relation("predicted_positions_primary_position_idTopositions", fields: [primary_position_id], references: [id], onDelete: Cascade, map: "fk_ml_positions_positions1")
   positions_predicted_positions_secondary_position_idTopositions positions @relation("predicted_positions_secondary_position_idTopositions", fields: [secondary_position_id], references: [id], onDelete: Cascade, map: "fk_ml_positions_positions2")
 
@@ -597,14 +598,14 @@ model rankings {
 }
 
 model recruiters {
-  id         Int       @id @default(autoincrement())
-  name       String    @unique(map: "name_UNIQUE") @db.VarChar(128)
-  email      String    @unique(map: "email_UNIQUE") @db.VarChar(128)
-  phone      String    @unique(map: "phone_UNIQUE") @db.VarChar(128)
-  slug       String    @unique(map: "slug_UNIQUE") @db.VarChar(128)
+  id         Int      @id @default(autoincrement())
+  name       String   @unique(map: "name_UNIQUE") @db.VarChar(128)
+  email      String   @unique(map: "email_UNIQUE") @db.VarChar(128)
+  phone      String   @unique(map: "phone_UNIQUE") @db.VarChar(128)
+  slug       String   @unique(map: "slug_UNIQUE") @db.VarChar(128)
   created_at Int
   updated_at Int
-  players    players[]
+  players    Player[]
 }
 
 model seasons {
@@ -754,7 +755,7 @@ model statistics {
   avg_field_goals_3pt_made      Decimal?       @db.Decimal(3, 1)
   avg_field_goals_3pt_attempted Decimal?       @db.Decimal(3, 1)
   college_class                 college_class? @relation(fields: [college_class_id], references: [id], map: "fk_statistics_college_class1")
-  players                       players        @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_stats_avg_players10")
+  players                       Player         @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_stats_avg_players10")
   seasons                       seasons        @relation(fields: [season_id], references: [id], onDelete: Cascade, map: "fk_stats_avg_seasons10")
   teams                         teams          @relation(fields: [team_id], references: [id], onDelete: Cascade, map: "fk_stats_avg_teams10")
 
@@ -847,7 +848,7 @@ model videos {
   cloud_thumb  String? @db.VarChar(120)
   cloud_sprite String? @db.VarChar(120)
   cloud_vtt    String? @db.VarChar(255)
-  players      players @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_video")
+  players      Player  @relation(fields: [player_id], references: [id], onDelete: Cascade, map: "fk_player_video")
 
   @@index([player_id], map: "player_video_idx")
 }
